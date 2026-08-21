@@ -52,15 +52,15 @@
             </div>
             
             <p class="text-xs text-gray-400 text-center mt-2">
-                Pode levar de 10 a 30 segundos no primeiro uso.
+                O primeiro uso demora um pouco para baixar a IA.
             </p>
         </div>
     </div>
 
-    <!-- Biblioteca estável versão 1.4.3 -->
-    <script src="https://unpkg.com/@imgly/background-removal@1.4.3/dist/imglyRemoveBackground.umd.js"></script>
+    <!-- Retornamos para o formato de módulo (ESM) -->
+    <script type="module">
+        import { removeBackground } from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm";
 
-    <script>
         const imageInput = document.getElementById('imageInput');
         const canvas = document.getElementById('campaignCanvas');
         const ctx = canvas.getContext('2d');
@@ -102,13 +102,9 @@
                 const userImageURL = URL.createObjectURL(file);
                 setStatus("Baixando recursos e removendo fundo (aguarde)...", true);
                 
-                // Configuração da versão 1.4.3
-                const config = {
-                    publicPath: "https://unpkg.com/@imgly/background-removal@1.4.3/dist/"
-                };
-                
-                // A função agora é chamada diretamente do objeto global instanciado pela tag <script>
-                const imageBlob = await imglyRemoveBackground(userImageURL, config);
+                // MUDANÇA PRINCIPAL: Chamamos a IA pura, sem forçar o publicPath.
+                // Isso obriga a biblioteca a usar sua própria configuração nativa de arquivos.
+                const imageBlob = await removeBackground(userImageURL);
                 const transparentUserImageURL = URL.createObjectURL(imageBlob);
                 
                 const userImage = new Image();
@@ -141,7 +137,7 @@
 
             } catch (error) {
                 console.error("Erro no processamento:", error);
-                setStatus(`<span class="text-red-500">Erro. Tente novamente com outra foto.</span>`);
+                setStatus(`<span class="text-red-500">Erro. Tente recarregar a página e enviar novamente.</span>`);
             }
         });
 
