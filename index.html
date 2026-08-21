@@ -1,11 +1,10 @@
-html_content = """
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apoie o Candidato</title>
-    <!-- Tailwind CSS for quick and good-looking styling -->
+    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom loader for the AI processing */
@@ -42,7 +41,6 @@ html_content = """
             </div>
 
             <!-- Canvas Container (Preview) -->
-            <!-- The canvas is where we draw everything. We wrap it to keep aspect ratio and styling. -->
             <div class="relative w-full aspect-square bg-gray-200 rounded-lg overflow-hidden border-2 border-dashed border-gray-300 flex items-center justify-center shadow-inner">
                 <canvas id="campaignCanvas" class="w-full h-full object-cover hidden"></canvas>
                 <div id="placeholderText" class="text-gray-400 text-center p-4">
@@ -53,27 +51,25 @@ html_content = """
 
             <!-- Controls -->
             <div class="flex flex-col gap-3">
-                <!-- Hide the actual file input and use a styled label as a button -->
                 <input type="file" id="imageInput" accept="image/*" class="hidden">
                 <label for="imageInput" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-4 rounded-lg text-center cursor-pointer transition-colors duration-200">
                     1. Escolher Foto
                 </label>
 
-                <!-- Download button (initially hidden/disabled style) -->
+                <!-- Download button -->
                 <button id="downloadBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg text-center cursor-not-allowed opacity-50 transition-colors duration-200" disabled>
                     2. Baixar Imagem
                 </button>
             </div>
             
             <p class="text-xs text-gray-400 text-center mt-2">
-                O primeiro uso pode levar alguns segundos extras para carregar o sistema. Tudo processado no seu aparelho.
+                O primeiro uso pode levar alguns segundos extras para carregar o sistema.
             </p>
         </div>
     </div>
 
     <!-- 
-      We are using @imgly/background-removal. 
-      It is an excellent, free, client-side library for this exact purpose.
+      @imgly/background-removal library
     -->
     <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.3.0/dist/browser/imglyRemoveBackground.umd.min.js"></script>
 
@@ -85,35 +81,25 @@ html_content = """
         const statusArea = document.getElementById('statusArea');
         const placeholderText = document.getElementById('placeholderText');
 
-        // Set up canvas default size (e.g., 1080x1080 for Instagram/WhatsApp)
+        // Resolução da imagem final
         const CANVAS_SIZE = 1080;
         canvas.width = CANVAS_SIZE;
         canvas.height = CANVAS_SIZE;
 
-        // --- YOUR TEMPLATE HERE ---
-        // For this to work on Vercel/GitHub pages, you need to upload your template PNG 
-        // to the same folder and change this path. 
-        // It MUST have a transparent area for the person to show through.
-        const TEMPLATE_URL = 'template.png'; // <-- REPLACE THIS WITH YOUR PNG FILENAME
-        
-        // --- BACKGROUND COLOR ---
-        // Since we are removing the user's background, we need a color or image behind them.
-        // I'm using a solid color based on the design you showed me (blueish).
-        const BACKGROUND_COLOR = '#0f48e6'; // Change to whatever fits your campaign
+        // --- SEU TEMPLATE E COR DE FUNDO ---
+        const TEMPLATE_URL = 'template.png'; // Substitua pelo nome da sua arte PNG
+        const BACKGROUND_COLOR = '#0f48e6'; // Cor de fundo atrás da pessoa
         
         let templateImage = new Image();
         
-        // Pre-load the template image
         templateImage.onload = () => {
-            console.log("Template loaded successfully.");
+            console.log("Template carregado com sucesso.");
         };
         templateImage.onerror = () => {
-            console.error("Failed to load template.png. Ensure the file exists in the same directory.");
-            // We don't block the UI here, but the final result will lack the template if it fails.
+            console.error("Aviso: template.png não encontrado. Certifique-se de que o arquivo está na mesma pasta e com este exato nome.");
         };
         templateImage.src = TEMPLATE_URL;
 
-        // Function to update the status message (and show loader)
         function setStatus(message, isLoading = false) {
             if (isLoading) {
                 statusArea.innerHTML = `<div class="flex items-center gap-2"><div class="loader"></div><span class="font-semibold text-blue-600">${message}</span></div>`;
@@ -122,12 +108,11 @@ html_content = """
             }
         }
 
-        // When the user selects a file
         imageInput.addEventListener('change', async (event) => {
             const file = event.target.files[0];
             if (!file) return;
 
-            // Reset UI for new processing
+            // Reset UI
             downloadBtn.disabled = true;
             downloadBtn.classList.add('cursor-not-allowed', 'opacity-50');
             downloadBtn.classList.remove('hover:bg-blue-700');
@@ -135,74 +120,62 @@ html_content = """
             canvas.classList.remove('hidden');
 
             try {
-                // 1. Convert selected file to an Image object to draw on canvas later
                 const userImageURL = URL.createObjectURL(file);
                 
-                // 2. Start Background Removal
-                setStatus("Removendo fundo (pode levar alguns segundos)...", true);
+                setStatus("Baixando IA e removendo fundo (aguarde)...", true);
                 
-                // The @imgly library will download AI models (~15MB) on the first run.
-                // Subsequent runs are much faster.
-                const imageBlob = await imglyRemoveBackground(userImageURL);
+                // CONFIGURAÇÃO CORRIGIDA: Aponta de onde a biblioteca deve baixar os arquivos do modelo
+                const config = {
+                    publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.3.0/dist/"
+                };
+                
+                // Processa a imagem usando a configuração
+                const imageBlob = await imglyRemoveBackground(userImageURL, config);
                 const transparentUserImageURL = URL.createObjectURL(imageBlob);
                 
-                // 3. Load the transparent result into an Image object
                 const userImage = new Image();
                 userImage.src = transparentUserImageURL;
                 
                 userImage.onload = () => {
                     setStatus("Montando a imagem...", true);
                     
-                    // --- DRAWING THE SANDWICH ---
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                    // Layer 1: The background color (or you could draw a background image here)
+                    // Camada 1: Fundo
                     ctx.fillStyle = BACKGROUND_COLOR;
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                    // Layer 2: The User (without background)
-                    // We need to scale and position the user nicely.
-                    // This basic logic scales the user image to fit the height of the canvas 
-                    // and centers it horizontally. You might need to tweak this depending on the template.
+                    // Camada 2: Pessoa Recortada
                     const scale = canvas.height / userImage.height;
                     const newWidth = userImage.width * scale;
                     const xOffset = (canvas.width - newWidth) / 2;
                     
-                    // We draw it slightly lower (e.g., +50 on Y) so the head isn't cut off by top text. 
-                    // Adjust the Y offset (second '0') as needed for your specific design.
                     ctx.drawImage(userImage, xOffset, 50, newWidth, canvas.height);
 
-                    // Layer 3: The Campaign Template (with transparent areas)
-                    // Ensure the template is fully loaded before drawing
+                    // Camada 3: Moldura/Template
                     if (templateImage.complete && templateImage.naturalHeight !== 0) {
                         ctx.drawImage(templateImage, 0, 0, canvas.width, canvas.height);
                     } else {
-                        console.warn("Template not loaded in time or missing.");
+                        console.warn("Template não desenhado (não carregou).");
                     }
 
-                    // Done! Update UI
                     setStatus("Pronto! 🎉");
                     downloadBtn.disabled = false;
                     downloadBtn.classList.remove('cursor-not-allowed', 'opacity-50');
                     downloadBtn.classList.add('hover:bg-blue-700');
                     
-                    // Clean up object URLs to free memory
                     URL.revokeObjectURL(userImageURL);
-                    // URL.revokeObjectURL(transparentUserImageURL); // Keep this one for now if user wants to re-download without processing
                 };
 
             } catch (error) {
-                console.error("Error processing image:", error);
-                setStatus(`<span class="text-red-500">Erro ao processar imagem. Tente uma foto menor.</span>`);
+                console.error("Erro detalhado no processamento:", error);
+                setStatus(`<span class="text-red-500">Erro ao processar imagem. Verifique o console do navegador.</span>`);
             }
         });
 
-        // When the user clicks download
+        // Download
         downloadBtn.addEventListener('click', () => {
-            // Convert canvas content to a PNG data URL
             const dataURL = canvas.toDataURL('image/png');
-            
-            // Create a temporary link element to trigger the download
             const link = document.createElement('a');
             link.download = 'minha-foto-campanha.png';
             link.href = dataURL;
@@ -214,7 +187,3 @@ html_content = """
     </script>
 </body>
 </html>
-"""
-with open('index.html', 'w', encoding='utf-8') as f:
-    f.write(html_content)
-print("[file-tag: index.html]")
