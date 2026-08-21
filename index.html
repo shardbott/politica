@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apoie o Candidato</title>
-    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom loader for the AI processing */
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #3b82f6;
@@ -24,23 +22,17 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center font-sans p-4">
 
-    <!-- Main Container -->
     <div class="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden flex flex-col">
-        
-        <!-- Header -->
         <div class="bg-blue-600 text-white p-6 text-center">
             <h1 class="text-2xl font-bold uppercase tracking-wide">Eu Apoio!</h1>
             <p class="text-blue-100 text-sm mt-1">Gere sua foto personalizada da campanha</p>
         </div>
 
         <div class="p-6 flex flex-col gap-6">
-            
-            <!-- Instructions & Status -->
             <div id="statusArea" class="text-center text-gray-600 text-sm h-12 flex items-center justify-center">
                 Escolha uma foto sua com boa iluminação. O fundo será removido automaticamente!
             </div>
 
-            <!-- Canvas Container (Preview) -->
             <div class="relative w-full aspect-square bg-gray-200 rounded-lg overflow-hidden border-2 border-dashed border-gray-300 flex items-center justify-center shadow-inner">
                 <canvas id="campaignCanvas" class="w-full h-full object-cover hidden"></canvas>
                 <div id="placeholderText" class="text-gray-400 text-center p-4">
@@ -49,29 +41,26 @@
                 </div>
             </div>
 
-            <!-- Controls -->
             <div class="flex flex-col gap-3">
                 <input type="file" id="imageInput" accept="image/*" class="hidden">
                 <label for="imageInput" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-4 rounded-lg text-center cursor-pointer transition-colors duration-200">
                     1. Escolher Foto
                 </label>
-
-                <!-- Download button -->
                 <button id="downloadBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg text-center cursor-not-allowed opacity-50 transition-colors duration-200" disabled>
                     2. Baixar Imagem
                 </button>
             </div>
             
             <p class="text-xs text-gray-400 text-center mt-2">
-                O primeiro uso pode levar alguns segundos extras para baixar a IA.
+                Pode levar de 10 a 30 segundos no primeiro uso.
             </p>
         </div>
     </div>
 
-    <!-- Script em módulo -->
-    <script type="module">
-        import { removeBackground } from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm";
+    <!-- Biblioteca estável versão 1.4.3 -->
+    <script src="https://unpkg.com/@imgly/background-removal@1.4.3/dist/imglyRemoveBackground.umd.js"></script>
 
+    <script>
         const imageInput = document.getElementById('imageInput');
         const canvas = document.getElementById('campaignCanvas');
         const ctx = canvas.getContext('2d');
@@ -79,17 +68,14 @@
         const statusArea = document.getElementById('statusArea');
         const placeholderText = document.getElementById('placeholderText');
 
-        // Resolução
         const CANVAS_SIZE = 1080;
         canvas.width = CANVAS_SIZE;
         canvas.height = CANVAS_SIZE;
 
-        // --- ARQUIVOS ---
         const TEMPLATE_URL = 'template.png'; 
         const BACKGROUND_COLOR = '#0f48e6'; 
         
         let templateImage = new Image();
-        
         templateImage.onload = () => console.log("Template carregado.");
         templateImage.onerror = () => console.error("Template.png não encontrado.");
         templateImage.src = TEMPLATE_URL;
@@ -114,15 +100,15 @@
 
             try {
                 const userImageURL = URL.createObjectURL(file);
+                setStatus("Baixando recursos e removendo fundo (aguarde)...", true);
                 
-                setStatus("Baixando IA e removendo fundo (aguarde)...", true);
-                
-                // MUDANÇA AQUI: Usando o CDN Unpkg que espelha os binários corretamente
+                // Configuração da versão 1.4.3
                 const config = {
-                    publicPath: "https://unpkg.com/@imgly/background-removal@1.7.0/dist/"
+                    publicPath: "https://unpkg.com/@imgly/background-removal@1.4.3/dist/"
                 };
                 
-                const imageBlob = await removeBackground(userImageURL, config);
+                // A função agora é chamada diretamente do objeto global instanciado pela tag <script>
+                const imageBlob = await imglyRemoveBackground(userImageURL, config);
                 const transparentUserImageURL = URL.createObjectURL(imageBlob);
                 
                 const userImage = new Image();
@@ -132,7 +118,6 @@
                     setStatus("Montando a imagem...", true);
                     
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
                     ctx.fillStyle = BACKGROUND_COLOR;
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -156,7 +141,7 @@
 
             } catch (error) {
                 console.error("Erro no processamento:", error);
-                setStatus(`<span class="text-red-500">Erro: Verifique sua conexão e tente novamente.</span>`);
+                setStatus(`<span class="text-red-500">Erro. Tente novamente com outra foto.</span>`);
             }
         });
 
