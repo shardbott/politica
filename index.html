@@ -63,14 +63,13 @@
             </div>
             
             <p class="text-xs text-gray-400 text-center mt-2">
-                O primeiro uso pode levar alguns segundos extras para carregar o sistema.
+                O primeiro uso pode levar alguns segundos extras para baixar a IA.
             </p>
         </div>
     </div>
 
-    <!-- O script agora é do tipo módulo para carregar a IA corretamente -->
+    <!-- Script em módulo -->
     <script type="module">
-        // CORREÇÃO: Importando a função específica 'removeBackground' usando chaves
         import { removeBackground } from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm";
 
         const imageInput = document.getElementById('imageInput');
@@ -80,23 +79,19 @@
         const statusArea = document.getElementById('statusArea');
         const placeholderText = document.getElementById('placeholderText');
 
-        // Resolução da imagem final
+        // Resolução
         const CANVAS_SIZE = 1080;
         canvas.width = CANVAS_SIZE;
         canvas.height = CANVAS_SIZE;
 
-        // --- SEU TEMPLATE E COR DE FUNDO ---
-        const TEMPLATE_URL = 'template.png'; // Substitua pelo nome da sua arte PNG
-        const BACKGROUND_COLOR = '#0f48e6'; // Cor de fundo atrás da pessoa
+        // --- ARQUIVOS ---
+        const TEMPLATE_URL = 'template.png'; 
+        const BACKGROUND_COLOR = '#0f48e6'; 
         
         let templateImage = new Image();
         
-        templateImage.onload = () => {
-            console.log("Template carregado com sucesso.");
-        };
-        templateImage.onerror = () => {
-            console.error("Aviso: template.png não encontrado. Certifique-se de que o arquivo está na mesma pasta e com este exato nome.");
-        };
+        templateImage.onload = () => console.log("Template carregado.");
+        templateImage.onerror = () => console.error("Template.png não encontrado.");
         templateImage.src = TEMPLATE_URL;
 
         function setStatus(message, isLoading = false) {
@@ -111,7 +106,6 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            // Reset UI
             downloadBtn.disabled = true;
             downloadBtn.classList.add('cursor-not-allowed', 'opacity-50');
             downloadBtn.classList.remove('hover:bg-blue-700');
@@ -123,12 +117,11 @@
                 
                 setStatus("Baixando IA e removendo fundo (aguarde)...", true);
                 
-                // Configuração para puxar os modelos
+                // MUDANÇA AQUI: Usando o CDN Unpkg que espelha os binários corretamente
                 const config = {
-                    publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/"
+                    publicPath: "https://unpkg.com/@imgly/background-removal@1.7.0/dist/"
                 };
                 
-                // CORREÇÃO: Usando a função importada corretamente
                 const imageBlob = await removeBackground(userImageURL, config);
                 const transparentUserImageURL = URL.createObjectURL(imageBlob);
                 
@@ -140,22 +133,17 @@
                     
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                    // Camada 1: Fundo
                     ctx.fillStyle = BACKGROUND_COLOR;
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                    // Camada 2: Pessoa Recortada
                     const scale = canvas.height / userImage.height;
                     const newWidth = userImage.width * scale;
                     const xOffset = (canvas.width - newWidth) / 2;
                     
                     ctx.drawImage(userImage, xOffset, 50, newWidth, canvas.height);
 
-                    // Camada 3: Moldura/Template
                     if (templateImage.complete && templateImage.naturalHeight !== 0) {
                         ctx.drawImage(templateImage, 0, 0, canvas.width, canvas.height);
-                    } else {
-                        console.warn("Template não desenhado (não carregou).");
                     }
 
                     setStatus("Pronto! 🎉");
@@ -167,12 +155,11 @@
                 };
 
             } catch (error) {
-                console.error("Erro detalhado no processamento:", error);
-                setStatus(`<span class="text-red-500">Erro ao processar imagem. Tente novamente.</span>`);
+                console.error("Erro no processamento:", error);
+                setStatus(`<span class="text-red-500">Erro: Verifique sua conexão e tente novamente.</span>`);
             }
         });
 
-        // Download
         downloadBtn.addEventListener('click', () => {
             const dataURL = canvas.toDataURL('image/png');
             const link = document.createElement('a');
@@ -182,7 +169,6 @@
             link.click();
             document.body.removeChild(link);
         });
-
     </script>
 </body>
 </html>
