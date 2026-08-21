@@ -70,8 +70,8 @@
 
     <!-- O script agora é do tipo módulo para carregar a IA corretamente -->
     <script type="module">
-        // Importação direta da IA em formato de módulo moderno (versão 1.7.0)
-        import imglyRemoveBackground from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm";
+        // CORREÇÃO: Importando a função específica 'removeBackground' usando chaves
+        import { removeBackground } from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm";
 
         const imageInput = document.getElementById('imageInput');
         const canvas = document.getElementById('campaignCanvas');
@@ -123,13 +123,13 @@
                 
                 setStatus("Baixando IA e removendo fundo (aguarde)...", true);
                 
-                // CONFIGURAÇÃO ATUALIZADA para puxar os modelos da versão 1.7.0
+                // Configuração para puxar os modelos
                 const config = {
                     publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/"
                 };
                 
-                // Processa a imagem
-                const imageBlob = await imglyRemoveBackground(userImageURL, config);
+                // CORREÇÃO: Usando a função importada corretamente
+                const imageBlob = await removeBackground(userImageURL, config);
                 const transparentUserImageURL = URL.createObjectURL(imageBlob);
                 
                 const userImage = new Image();
